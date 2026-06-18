@@ -1,7 +1,7 @@
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Paper, Stack, Typography } from "@mui/material";
 
-export function NotificationEmptyState({ title, description }) {
+export function NotificationEmptyState({ title, description, action = null }) {
   return (
     <Paper
       elevation={0}
@@ -21,6 +21,7 @@ export function NotificationEmptyState({ title, description }) {
         <Typography variant="body2" color="text.secondary" maxWidth={420}>
           {description}
         </Typography>
+        {action}
       </Stack>
     </Paper>
   );

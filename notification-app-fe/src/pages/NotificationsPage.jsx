@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import NotificationsRoundedIcon from "@mui/icons-material/NotificationsRounded";
+import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import {
   Alert,
   Badge,
   Box,
   Button,
+  Chip,
   CircularProgress,
-  Pagination,
   Paper,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 
@@ -20,14 +24,15 @@ import { useNotifications } from "../hooks/useNotifications";
 import { frontendLogger } from "../middleware/logger";
 import { formatTimestamp } from "../utils/time";
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE_OPTIONS = [9, 18, 27];
 
 export function NotificationsPage({ isSeen, markSeen }) {
   const [filter, setFilter] = useState("All");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(PAGE_SIZE_OPTIONS[0]);
   const { notifications, hasMore, fetchedAt, loading, error, retry } = useNotifications({
     page,
-    limit: PAGE_SIZE,
+    limit,
     notificationType: filter,
   });
 
@@ -36,7 +41,6 @@ export function NotificationsPage({ isSeen, markSeen }) {
   }, []);
 
   const unreadCount = notifications.filter((notification) => !isSeen(notification.ID)).length;
-  const pageCount = hasMore ? page + 1 : Math.max(page, 1);
 
   const handleFilterChange = (newFilter) => {
     setFilter(newFilter);
@@ -44,8 +48,8 @@ export function NotificationsPage({ isSeen, markSeen }) {
     void frontendLogger.info("component", `all notifications filter changed to ${newFilter}`);
   };
 
-  const handlePageChange = (_, newPage) => {
-    setPage(newPage);
+  const handlePageChange = (nextPage) => {
+    setPage(nextPage);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -84,6 +88,25 @@ export function NotificationsPage({ isSeen, markSeen }) {
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width={{ xs: "100%", md: "auto" }}>
               <NotificationFilter value={filter} onChange={handleFilterChange} />
+              <ToggleButtonGroup
+                exclusive
+                value={limit}
+                onChange={(_, nextLimit) => {
+                  if (nextLimit) {
+                    setLimit(nextLimit);
+                    setPage(1);
+                    void frontendLogger.info("state", `all notifications page size changed to ${nextLimit}`);
+                  }
+                }}
+                size="small"
+                sx={{ flexWrap: "wrap", gap: 0.5 }}
+              >
+                {PAGE_SIZE_OPTIONS.map((option) => (
+                  <ToggleButton key={option} value={option} sx={{ textTransform: "none", px: 1.75 }}>
+                    {option}/page
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
               <Button
                 variant="outlined"
                 startIcon={<RefreshRoundedIcon />}
@@ -96,12 +119,21 @@ export function NotificationsPage({ isSeen, markSeen }) {
           </Stack>
 
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <Typography variant="body2" color="text.secondary">
-              Visible new items: <strong>{unreadCount}</strong>
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Last fetched: <strong>{fetchedAt ? formatTimestamp(fetchedAt) : "Pending"}</strong>
-            </Typography>
+            <Chip
+              label={`Page ${page}`}
+              variant="outlined"
+              sx={{ alignSelf: "flex-start", borderRadius: 999 }}
+            />
+            <Chip
+              label={`Visible new items ${unreadCount}`}
+              variant="outlined"
+              sx={{ alignSelf: "flex-start", borderRadius: 999 }}
+            />
+            <Chip
+              label={`Last fetched ${fetchedAt ? formatTimestamp(fetchedAt) : "Pending"}`}
+              variant="outlined"
+              sx={{ alignSelf: "flex-start", borderRadius: 999 }}
+            />
           </Stack>
         </Stack>
       </Paper>
@@ -144,15 +176,48 @@ export function NotificationsPage({ isSeen, markSeen }) {
       </Stack>
 
       {!loading && !error && notifications.length > 0 ? (
-        <Box display="flex" justifyContent="center" mt={1}>
-          <Pagination
-            count={pageCount}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-            shape="rounded"
-          />
-        </Box>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 4,
+            border: "1px solid",
+            borderColor: "divider",
+            px: { xs: 2, md: 2.5 },
+            py: 1.5,
+          }}
+        >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
+            justifyContent="space-between"
+            alignItems={{ xs: "stretch", sm: "center" }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              The upstream API returns pages without a total count, so navigation moves page by
+              page using the current `limit`.
+            </Typography>
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              <Button
+                variant="outlined"
+                startIcon={<ChevronLeftRoundedIcon />}
+                onClick={() => handlePageChange(Math.max(1, page - 1))}
+                disabled={page === 1 || loading}
+                sx={{ textTransform: "none", borderRadius: 999 }}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="contained"
+                endIcon={<ChevronRightRoundedIcon />}
+                onClick={() => handlePageChange(page + 1)}
+                disabled={!hasMore || loading}
+                sx={{ textTransform: "none", borderRadius: 999 }}
+              >
+                Next
+              </Button>
+            </Stack>
+          </Stack>
+        </Paper>
       ) : null}
     </Stack>
   );

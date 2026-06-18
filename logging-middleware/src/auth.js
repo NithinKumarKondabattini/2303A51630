@@ -2,6 +2,12 @@ function hasValue(value) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function findMissingFields(fieldMap) {
+  return Object.entries(fieldMap)
+    .filter(([, value]) => !hasValue(value))
+    .map(([fieldName]) => fieldName);
+}
+
 function parseExpiry(expiresIn) {
   if (typeof expiresIn !== "number" || Number.isNaN(expiresIn)) {
     return Date.now() + 10 * 60 * 1000;
@@ -62,8 +68,17 @@ export function createServiceAuthClient(options) {
   };
 
   async function register() {
-    if (!canRegister(state.credentials)) {
-      throw new Error("Registration requires email, name, mobileNo, githubUsername, rollNo, and accessCode.");
+    const missingRegistrationFields = findMissingFields({
+      email: state.credentials.email,
+      name: state.credentials.name,
+      mobileNo: state.credentials.mobileNo,
+      githubUsername: state.credentials.githubUsername,
+      rollNo: state.credentials.rollNo,
+      accessCode: state.credentials.accessCode,
+    });
+
+    if (missingRegistrationFields.length > 0) {
+      throw new Error(`Registration is missing: ${missingRegistrationFields.join(", ")}.`);
     }
 
     const response = await fetchImpl(`${baseUrl}/register`, {
@@ -115,8 +130,17 @@ export function createServiceAuthClient(options) {
 
     await ensureClientCredentials();
 
-    if (!hasAuthInputs(state.credentials)) {
-      throw new Error("Authorization requires email, name, rollNo, accessCode, clientID, and clientSecret.");
+    const missingAuthFields = findMissingFields({
+      email: state.credentials.email,
+      name: state.credentials.name,
+      rollNo: state.credentials.rollNo,
+      accessCode: state.credentials.accessCode,
+      clientID: state.credentials.clientID,
+      clientSecret: state.credentials.clientSecret,
+    });
+
+    if (missingAuthFields.length > 0) {
+      throw new Error(`Authorization is missing: ${missingAuthFields.join(", ")}.`);
     }
 
     const response = await fetchImpl(`${baseUrl}/auth`, {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import FiberNewRoundedIcon from "@mui/icons-material/FiberNewRounded";
+import FlagRoundedIcon from "@mui/icons-material/FlagRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import {
   Accordion,
@@ -22,6 +23,12 @@ const toneByType = {
   Placement: "success",
   Result: "warning",
   Event: "primary",
+};
+
+const accentByType = {
+  Placement: "linear-gradient(180deg, rgba(47,125,50,0.16), rgba(47,125,50,0.03))",
+  Result: "linear-gradient(180deg, rgba(199,119,0,0.16), rgba(199,119,0,0.03))",
+  Event: "linear-gradient(180deg, rgba(13,108,140,0.16), rgba(13,108,140,0.03))",
 };
 
 export function NotificationCard({ notification, seen, onViewed, showPriority = false }) {
@@ -49,7 +56,7 @@ export function NotificationCard({ notification, seen, onViewed, showPriority = 
         borderColor: seen ? "divider" : "primary.light",
         background: seen
           ? "linear-gradient(180deg, rgba(255,255,255,0.97), rgba(249,250,252,0.98))"
-          : "linear-gradient(180deg, rgba(239,250,255,0.96), rgba(255,255,255,0.98))",
+          : accentByType[type],
         "&::before": {
           display: "none",
         },
@@ -106,6 +113,22 @@ export function NotificationCard({ notification, seen, onViewed, showPriority = 
           <Typography variant="h6" sx={{ fontSize: "1.05rem" }}>
             {notification.Message || "Untitled notification"}
           </Typography>
+
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Chip
+              icon={<FlagRoundedIcon />}
+              label={notification.ID ? `ID ${notification.ID.slice(0, 8)}` : "Missing ID"}
+              size="small"
+              variant="outlined"
+              sx={{ borderRadius: 999 }}
+            />
+            <Chip
+              label={formatTimestamp(notification.Timestamp)}
+              size="small"
+              variant="outlined"
+              sx={{ borderRadius: 999 }}
+            />
+          </Stack>
         </Stack>
       </AccordionSummary>
 
@@ -116,7 +139,9 @@ export function NotificationCard({ notification, seen, onViewed, showPriority = 
             <Typography variant="body2" color="text.secondary">
               Notification ID
             </Typography>
-            <Typography variant="body1">{notification.ID || "Unavailable"}</Typography>
+            <Typography variant="body1" sx={{ fontFamily: '"Consolas", "Courier New", monospace' }}>
+              {notification.ID || "Unavailable"}
+            </Typography>
           </Box>
           <Box>
             <Typography variant="body2" color="text.secondary">

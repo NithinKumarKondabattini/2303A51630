@@ -12,6 +12,23 @@ function buildUrl(path, params) {
   return url;
 }
 
+async function readErrorMessage(response) {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    const payload = await response.json().catch(() => null);
+
+    if (payload?.message) {
+      return payload.details
+        ? `${payload.message} ${String(payload.details).trim()}`
+        : payload.message;
+    }
+  }
+
+  const text = await response.text();
+  return text || `Request failed with status ${response.status}.`;
+}
+
 export async function requestJson(path, options = {}) {
   const url = buildUrl(path, options.params);
   const method = options.method ?? "GET";
@@ -28,7 +45,7 @@ export async function requestJson(path, options = {}) {
   });
 
   if (!response.ok) {
-    const details = await response.text();
+    const details = await readErrorMessage(response);
     await frontendLogger.error("api", `request failed ${method} ${url.pathname}`);
     throw new Error(details || `Request failed with status ${response.status}.`);
   }

@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   Paper,
   Stack,
@@ -108,6 +109,15 @@ export function PriorityInboxPage({ isSeen, markSeen }) {
           <Typography variant="body2" color="text.secondary">
             Last fetched: <strong>{fetchedAt ? formatTimestamp(fetchedAt) : "Pending"}</strong>
           </Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Chip label={`Top ${limit}`} variant="outlined" sx={{ borderRadius: 999 }} />
+            <Chip label={`Filter ${filter}`} variant="outlined" sx={{ borderRadius: 999 }} />
+            <Chip
+              label={`${notifications.filter((notification) => !isSeen(notification.ID)).length} new in this view`}
+              variant="outlined"
+              sx={{ borderRadius: 999 }}
+            />
+          </Stack>
         </Stack>
       </Paper>
 

@@ -16,8 +16,10 @@ import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { PriorityInboxPage } from "./pages/PriorityInboxPage";
+import { ServiceStatusBanner } from "./components/ServiceStatusBanner";
 import { useHashRoute } from "./hooks/useHashRoute";
 import { useSeenNotifications } from "./hooks/useSeenNotifications";
+import { useServiceStatus } from "./hooks/useServiceStatus";
 import { frontendLogger } from "./middleware/logger";
 
 function SummaryCard({ label, value, tone }) {
@@ -51,6 +53,7 @@ function SummaryCard({ label, value, tone }) {
 export default function App() {
   const { route, navigate } = useHashRoute();
   const { seenIds, markSeen, isSeen } = useSeenNotifications();
+  const serviceStatus = useServiceStatus();
 
   useEffect(() => {
     void frontendLogger.info("page", "application shell mounted");
@@ -96,6 +99,11 @@ export default function App() {
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} width={{ xs: "100%", md: "auto" }}>
                   <SummaryCard label="Viewed items" value={seenIds.length} tone="blue" />
+                  <SummaryCard
+                    label="Live API"
+                    value={serviceStatus.data?.setup?.canFetchNotifications ? "Ready" : "Setup"}
+                    tone="blue"
+                  />
                   <SummaryCard label="Priority mode" value="Weighted" tone="gold" />
                 </Stack>
               </Stack>
@@ -127,6 +135,13 @@ export default function App() {
                   sx={{ textTransform: "none", minHeight: 56 }}
                 />
               </Tabs>
+
+              <ServiceStatusBanner
+                loading={serviceStatus.loading}
+                error={serviceStatus.error}
+                status={serviceStatus.data}
+                onRetry={serviceStatus.retry}
+              />
             </Stack>
           </Box>
 

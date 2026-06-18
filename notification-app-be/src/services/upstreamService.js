@@ -40,7 +40,13 @@ async function requestJson(baseUrl, path, options = {}) {
       "service",
       `upstream request failed ${method} ${url.pathname} (${response.status})`
     );
-    throw new HttpError(response.status, "Upstream service request failed.", details);
+    throw new HttpError(
+      response.status,
+      response.status === 401
+        ? "Protected API authorization failed. Check the service credentials in the backend .env file."
+        : "Upstream service request failed.",
+      details
+    );
   }
 
   await backendLogger.info("service", `upstream request completed ${method} ${url.pathname}`);
