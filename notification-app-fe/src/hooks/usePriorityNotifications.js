@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 
-import { fetchNotifications } from "../api/notifications";
+import { fetchPriorityNotifications } from "../api/notifications";
 import { frontendLogger } from "../middleware/logger";
 
-export function useNotifications({ page, limit, notificationType }) {
+export function usePriorityNotifications({ limit, notificationType }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [state, setState] = useState({
     notifications: [],
     fetchedAt: "",
-    hasMore: false,
     loading: true,
     error: "",
   });
@@ -26,10 +25,9 @@ export function useNotifications({ page, limit, notificationType }) {
       try {
         await frontendLogger.debug(
           "hook",
-          `loading notifications page=${page} limit=${limit} filter=${notificationType}`
+          `loading priority notifications limit=${limit} filter=${notificationType}`
         );
-        const payload = await fetchNotifications({
-          page,
+        const payload = await fetchPriorityNotifications({
           limit,
           notificationType,
           signal: controller.signal,
@@ -42,7 +40,6 @@ export function useNotifications({ page, limit, notificationType }) {
         setState({
           notifications: Array.isArray(payload.notifications) ? payload.notifications : [],
           fetchedAt: payload.fetchedAt ?? "",
-          hasMore: Boolean(payload.hasMore),
           loading: false,
           error: "",
         });
@@ -51,19 +48,24 @@ export function useNotifications({ page, limit, notificationType }) {
           return;
         }
 
-        await frontendLogger.error("hook", `notification fetch failed: ${error.message}`);
+        await frontendLogger.error("hook", `priority fetch failed: ${error.message}`);
         setState((currentState) => ({
           ...currentState,
           loading: false,
-          error: error.message || "Unable to load notifications.",
+          error: error.message || "Unable to load priority notifications.",
         }));
       }
     }
 
     load();
 
-    return () => controller.abort();
-  }, [page, limit, notificationType, refreshKey]);
+    const intervalId = window.setInterval(load, 60_000);
+
+    return () => {
+      controller.abort();
+      window.clearInterval(intervalId);
+    };
+  }, [limit, notificationType, refreshKey]);
 
   return {
     ...state,

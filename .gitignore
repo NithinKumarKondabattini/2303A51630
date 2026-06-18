@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+.vscode/
+.DS_Store
+*.log
+notification-app-fe/node_modules/
+notification-app-fe/dist/
+notification-app-be/node_modules/
+logging-middleware/node_modules/
+artifacts/videos/
