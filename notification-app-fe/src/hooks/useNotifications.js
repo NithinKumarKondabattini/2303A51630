@@ -3,17 +3,30 @@ import { useEffect, useState } from "react";
 import { fetchNotifications } from "../api/notifications";
 import { frontendLogger } from "../middleware/logger";
 
-export function useNotifications({ page, limit, notificationType }) {
+export function useNotifications({ page, limit, notificationType, enabled = true }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [state, setState] = useState({
     notifications: [],
     fetchedAt: "",
     hasMore: false,
+    meta: null,
     loading: true,
     error: "",
   });
 
   useEffect(() => {
+    if (!enabled) {
+      setState({
+        notifications: [],
+        fetchedAt: "",
+        hasMore: false,
+        meta: null,
+        loading: false,
+        error: "",
+      });
+      return undefined;
+    }
+
     const controller = new AbortController();
 
     async function load() {
@@ -43,6 +56,7 @@ export function useNotifications({ page, limit, notificationType }) {
           notifications: Array.isArray(payload.notifications) ? payload.notifications : [],
           fetchedAt: payload.fetchedAt ?? "",
           hasMore: Boolean(payload.hasMore),
+          meta: payload.meta ?? null,
           loading: false,
           error: "",
         });
@@ -63,7 +77,7 @@ export function useNotifications({ page, limit, notificationType }) {
     load();
 
     return () => controller.abort();
-  }, [page, limit, notificationType, refreshKey]);
+  }, [enabled, page, limit, notificationType, refreshKey]);
 
   return {
     ...state,

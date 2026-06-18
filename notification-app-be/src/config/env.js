@@ -84,3 +84,7 @@ export function getCredentialSnapshot() {
     missingAuthFields,
   };
 }
+
+export function canUseProtectedNotifications(setup = getCredentialSnapshot()) {
+  return setup.serviceBaseUrlConfigured && (setup.authReady || setup.registrationReady);
+}

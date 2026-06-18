@@ -51,7 +51,7 @@ export function NotificationCard({ notification, seen, onViewed, showPriority = 
       onChange={handleChange}
       elevation={0}
       sx={{
-        borderRadius: "20px !important",
+        borderRadius: "8px !important",
         border: "1px solid",
         borderColor: seen ? "divider" : "primary.light",
         background: seen
@@ -75,7 +75,6 @@ export function NotificationCard({ notification, seen, onViewed, showPriority = 
                 label={type}
                 color={toneByType[type]}
                 size="small"
-                sx={{ borderRadius: 999 }}
               />
               {seen ? (
                 <Chip
@@ -83,7 +82,6 @@ export function NotificationCard({ notification, seen, onViewed, showPriority = 
                   label="Viewed"
                   size="small"
                   variant="outlined"
-                  sx={{ borderRadius: 999 }}
                 />
               ) : (
                 <Chip
@@ -91,7 +89,6 @@ export function NotificationCard({ notification, seen, onViewed, showPriority = 
                   label="New"
                   size="small"
                   color="primary"
-                  sx={{ borderRadius: 999 }}
                 />
               )}
               {showPriority ? (
@@ -100,7 +97,6 @@ export function NotificationCard({ notification, seen, onViewed, showPriority = 
                   label={`Priority ${priorityWeight}`}
                   size="small"
                   color="secondary"
-                  sx={{ borderRadius: 999 }}
                 />
               ) : null}
             </Stack>
@@ -120,13 +116,11 @@ export function NotificationCard({ notification, seen, onViewed, showPriority = 
               label={notification.ID ? `ID ${notification.ID.slice(0, 8)}` : "Missing ID"}
               size="small"
               variant="outlined"
-              sx={{ borderRadius: 999 }}
             />
             <Chip
               label={formatTimestamp(notification.Timestamp)}
               size="small"
               variant="outlined"
-              sx={{ borderRadius: 999 }}
             />
           </Stack>
         </Stack>

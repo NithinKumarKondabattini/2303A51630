@@ -2,6 +2,11 @@
 
 React frontend, Express proxy, and a shared logging package for a campus notification workflow.
 
+Live frontend: [https://nithinkumarkondabattini.github.io/2303A51630/](https://nithinkumarkondabattini.github.io/2303A51630/)
+
+The public GitHub Pages link runs as a static demo because GitHub Pages cannot
+host the Express backend. Run the backend locally to use protected API data.
+
 ## Architecture
 
 ```mermaid
@@ -20,7 +25,10 @@ flowchart LR
 ## Local setup
 
 1. Create `notification-app-be/.env` from `notification-app-be/.env.example`.
-2. Fill the service credentials in that file.
+2. Fill the service credentials in that file. The backend uses
+   `http://4.224.186.213/evaluation-service/register` and
+   `http://4.224.186.213/evaluation-service/auth` to obtain protected API
+   access when the required values are present.
 3. Install dependencies:
 
 ```bash
@@ -43,6 +51,10 @@ npm run dev
 ```
 
 6. Open [http://localhost:3000](http://localhost:3000).
+
+If protected credentials are incomplete, the Express backend serves demo
+notifications through the same `/api/notifications` routes so the UI remains
+usable.
 
 ## Included folders
 

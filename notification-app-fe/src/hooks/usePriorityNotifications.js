@@ -3,16 +3,28 @@ import { useEffect, useState } from "react";
 import { fetchPriorityNotifications } from "../api/notifications";
 import { frontendLogger } from "../middleware/logger";
 
-export function usePriorityNotifications({ limit, notificationType }) {
+export function usePriorityNotifications({ limit, notificationType, enabled = true }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [state, setState] = useState({
     notifications: [],
     fetchedAt: "",
+    meta: null,
     loading: true,
     error: "",
   });
 
   useEffect(() => {
+    if (!enabled) {
+      setState({
+        notifications: [],
+        fetchedAt: "",
+        meta: null,
+        loading: false,
+        error: "",
+      });
+      return undefined;
+    }
+
     const controller = new AbortController();
 
     async function load() {
@@ -40,6 +52,7 @@ export function usePriorityNotifications({ limit, notificationType }) {
         setState({
           notifications: Array.isArray(payload.notifications) ? payload.notifications : [],
           fetchedAt: payload.fetchedAt ?? "",
+          meta: payload.meta ?? null,
           loading: false,
           error: "",
         });
@@ -65,7 +78,7 @@ export function usePriorityNotifications({ limit, notificationType }) {
       controller.abort();
       window.clearInterval(intervalId);
     };
-  }, [limit, notificationType, refreshKey]);
+  }, [enabled, limit, notificationType, refreshKey]);
 
   return {
     ...state,

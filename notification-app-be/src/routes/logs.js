@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { validateLogEntry } from "logging-middleware";
 
-import { env } from "../config/env.js";
+import { canUseProtectedNotifications, env, getCredentialSnapshot } from "../config/env.js";
 import { backendLogger } from "../config/logger.js";
 import { asyncRoute } from "../utils/asyncRoute.js";
 import { HttpError } from "../utils/httpError.js";
@@ -23,6 +23,15 @@ logsRouter.post(
       validateLogEntry(entry);
     } catch (error) {
       throw new HttpError(400, error.message);
+    }
+
+    if (!canUseProtectedNotifications(getCredentialSnapshot())) {
+      await backendLogger.info("route", "frontend log accepted locally in demo mode");
+      response.status(202).json({
+        message: "Log accepted locally.",
+        source: "demo",
+      });
+      return;
     }
 
     await forwardLog(env.serviceBaseUrl, entry);

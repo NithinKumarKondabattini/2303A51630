@@ -6,10 +6,19 @@ import {
 } from "logging-middleware";
 
 import { env } from "./env.js";
+import { persistClientCredentials } from "./credentialStore.js";
 
 const authClient = createServiceAuthClient({
   baseUrl: env.serviceBaseUrl,
   credentials: env.credentials,
+  onRegistered: async (data) => {
+    await persistClientCredentials({
+      clientID: data.clientID,
+      clientSecret: data.clientSecret,
+    });
+    env.credentials.clientID = data.clientID ?? "";
+    env.credentials.clientSecret = data.clientSecret ?? "";
+  },
 });
 
 const transport = createProtectedLogTransport({

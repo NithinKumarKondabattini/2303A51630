@@ -23,27 +23,36 @@ export const appTheme = createTheme({
     },
   },
   shape: {
-    borderRadius: 20,
+    borderRadius: 8,
   },
   typography: {
-    fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
+    fontFamily: '"Aptos", "Trebuchet MS", "Segoe UI", sans-serif',
     h3: {
       fontWeight: 800,
-      letterSpacing: "-0.04em",
+      letterSpacing: 0,
     },
     h4: {
       fontWeight: 700,
-      letterSpacing: "-0.03em",
+      letterSpacing: 0,
     },
     h5: {
       fontWeight: 700,
     },
   },
   components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          textTransform: "none",
+          boxShadow: "none",
+        },
+      },
+    },
     MuiPaper: {
       styleOverrides: {
         root: {
-          boxShadow: "0 18px 45px rgba(14, 41, 55, 0.06)",
+          boxShadow: "0 10px 24px rgba(14, 41, 55, 0.06)",
         },
       },
     },
@@ -51,6 +60,25 @@ export const appTheme = createTheme({
       styleOverrides: {
         root: {
           fontWeight: 600,
+          borderRadius: 6,
+        },
+      },
+    },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          borderColor: "rgba(20, 33, 43, 0.12)",
+          paddingInline: 16,
+          textTransform: "none",
+          "&.Mui-selected": {
+            color: "#ffffff",
+            borderColor: "#0d6c8c",
+            background: "linear-gradient(135deg, #0d6c8c, #2b8cab)",
+          },
+          "&.Mui-selected:hover": {
+            background: "linear-gradient(135deg, #0b5f7b, #257b97)",
+          },
         },
       },
     },

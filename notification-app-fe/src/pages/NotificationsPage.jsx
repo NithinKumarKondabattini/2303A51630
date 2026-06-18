@@ -10,6 +10,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Divider,
   Paper,
   Stack,
   ToggleButton,
@@ -26,14 +27,15 @@ import { formatTimestamp } from "../utils/time";
 
 const PAGE_SIZE_OPTIONS = [9, 18, 27];
 
-export function NotificationsPage({ isSeen, markSeen }) {
+export function NotificationsPage({ isSeen, markSeen, serviceReady, setup }) {
   const [filter, setFilter] = useState("All");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(PAGE_SIZE_OPTIONS[0]);
-  const { notifications, hasMore, fetchedAt, loading, error, retry } = useNotifications({
+  const { notifications, hasMore, fetchedAt, meta, loading, error, retry } = useNotifications({
     page,
     limit,
     notificationType: filter,
+    enabled: serviceReady,
   });
 
   useEffect(() => {
@@ -53,12 +55,18 @@ export function NotificationsPage({ isSeen, markSeen }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const setupMissingFields = setup
+    ? Array.from(
+        new Set([...(setup.missingRegistrationFields ?? []), ...(setup.missingAuthFields ?? [])])
+      )
+    : [];
+
   return (
     <Stack spacing={3}>
       <Paper
         elevation={0}
         sx={{
-          borderRadius: 4,
+          borderRadius: 1,
           border: "1px solid",
           borderColor: "divider",
           px: { xs: 2, md: 3 },
@@ -86,8 +94,38 @@ export function NotificationsPage({ isSeen, markSeen }) {
               </Box>
             </Stack>
 
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width={{ xs: "100%", md: "auto" }}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              width={{ xs: "100%", md: "auto" }}
+              alignItems={{ xs: "stretch", sm: "center" }}
+            >
+              <Button
+                variant="outlined"
+                startIcon={<RefreshRoundedIcon />}
+                onClick={retry}
+                disabled={!serviceReady}
+                sx={{ alignSelf: { xs: "stretch", sm: "center" } }}
+              >
+                Refresh
+              </Button>
+            </Stack>
+          </Stack>
+
+          <Divider />
+
+          <Stack direction={{ xs: "column", lg: "row" }} spacing={2} justifyContent="space-between">
+            <Stack spacing={0.8}>
+              <Typography variant="overline" color="text.secondary">
+                Notification type
+              </Typography>
               <NotificationFilter value={filter} onChange={handleFilterChange} />
+            </Stack>
+
+            <Stack spacing={0.8}>
+              <Typography variant="overline" color="text.secondary">
+                Results per page
+              </Typography>
               <ToggleButtonGroup
                 exclusive
                 value={limit}
@@ -99,44 +137,63 @@ export function NotificationsPage({ isSeen, markSeen }) {
                   }
                 }}
                 size="small"
-                sx={{ flexWrap: "wrap", gap: 0.5 }}
+                sx={{
+                  flexWrap: "wrap",
+                  gap: 0.75,
+                  "& .MuiToggleButtonGroup-grouped": {
+                    border: "1px solid",
+                    borderColor: "divider",
+                  },
+                }}
               >
                 {PAGE_SIZE_OPTIONS.map((option) => (
-                  <ToggleButton key={option} value={option} sx={{ textTransform: "none", px: 1.75 }}>
+                  <ToggleButton key={option} value={option} sx={{ px: 1.75 }}>
                     {option}/page
                   </ToggleButton>
                 ))}
               </ToggleButtonGroup>
-              <Button
-                variant="outlined"
-                startIcon={<RefreshRoundedIcon />}
-                onClick={retry}
-                sx={{ textTransform: "none", borderRadius: 999 }}
-              >
-                Refresh
-              </Button>
             </Stack>
           </Stack>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} flexWrap="wrap" useFlexGap>
             <Chip
               label={`Page ${page}`}
               variant="outlined"
-              sx={{ alignSelf: "flex-start", borderRadius: 999 }}
+              sx={{ alignSelf: "flex-start" }}
             />
             <Chip
               label={`Visible new items ${unreadCount}`}
               variant="outlined"
-              sx={{ alignSelf: "flex-start", borderRadius: 999 }}
+              sx={{ alignSelf: "flex-start" }}
             />
             <Chip
               label={`Last fetched ${fetchedAt ? formatTimestamp(fetchedAt) : "Pending"}`}
               variant="outlined"
-              sx={{ alignSelf: "flex-start", borderRadius: 999 }}
+              sx={{ alignSelf: "flex-start" }}
+            />
+            <Chip
+              label={meta?.usingDemoData ? "Source demo" : "Source live"}
+              color={meta?.usingDemoData ? "warning" : "success"}
+              variant="outlined"
+              sx={{ alignSelf: "flex-start" }}
             />
           </Stack>
         </Stack>
       </Paper>
+
+      {!serviceReady && setup ? (
+        <NotificationEmptyState
+          title="Backend status is not ready"
+          description="The local proxy responded, but notifications are not available yet."
+          action={
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent="center">
+              {setupMissingFields.map((field) => (
+                <Chip key={field} label={field} size="small" variant="outlined" />
+              ))}
+            </Stack>
+          }
+        />
+      ) : null}
 
       {loading && notifications.length === 0 ? (
         <Box display="flex" justifyContent="center" py={8}>
@@ -144,7 +201,7 @@ export function NotificationsPage({ isSeen, markSeen }) {
         </Box>
       ) : null}
 
-      {error ? (
+      {serviceReady && error ? (
         <Alert
           severity="error"
           action={
@@ -157,7 +214,7 @@ export function NotificationsPage({ isSeen, markSeen }) {
         </Alert>
       ) : null}
 
-      {!loading && !error && notifications.length === 0 ? (
+      {serviceReady && !loading && !error && notifications.length === 0 ? (
         <NotificationEmptyState
           title="No notifications matched this view"
           description="Try widening the filter or refresh again after new items arrive."
@@ -175,11 +232,11 @@ export function NotificationsPage({ isSeen, markSeen }) {
         ))}
       </Stack>
 
-      {!loading && !error && notifications.length > 0 ? (
+      {serviceReady && !loading && !error && notifications.length > 0 ? (
         <Paper
           elevation={0}
           sx={{
-            borderRadius: 4,
+            borderRadius: 1,
             border: "1px solid",
             borderColor: "divider",
             px: { xs: 2, md: 2.5 },
@@ -202,7 +259,6 @@ export function NotificationsPage({ isSeen, markSeen }) {
                 startIcon={<ChevronLeftRoundedIcon />}
                 onClick={() => handlePageChange(Math.max(1, page - 1))}
                 disabled={page === 1 || loading}
-                sx={{ textTransform: "none", borderRadius: 999 }}
               >
                 Previous
               </Button>
@@ -211,7 +267,6 @@ export function NotificationsPage({ isSeen, markSeen }) {
                 endIcon={<ChevronRightRoundedIcon />}
                 onClick={() => handlePageChange(page + 1)}
                 disabled={!hasMore || loading}
-                sx={{ textTransform: "none", borderRadius: 999 }}
               >
                 Next
               </Button>

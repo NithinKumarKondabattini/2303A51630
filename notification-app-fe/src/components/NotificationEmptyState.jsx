@@ -6,7 +6,7 @@ export function NotificationEmptyState({ title, description, action = null }) {
     <Paper
       elevation={0}
       sx={{
-        borderRadius: 4,
+        borderRadius: 1,
         border: "1px dashed",
         borderColor: "divider",
         px: 3,

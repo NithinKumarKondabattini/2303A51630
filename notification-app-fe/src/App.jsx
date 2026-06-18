@@ -3,13 +3,16 @@ import {
   Box,
   Chip,
   Container,
+  Divider,
+  Grid,
   Paper,
   Stack,
   Tab,
   Tabs,
   Typography,
 } from "@mui/material";
-import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
+import CloudDoneRoundedIcon from "@mui/icons-material/CloudDoneRounded";
+import DataObjectRoundedIcon from "@mui/icons-material/DataObjectRounded";
 import NotificationsActiveRoundedIcon from "@mui/icons-material/NotificationsActiveRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
@@ -22,30 +25,34 @@ import { useSeenNotifications } from "./hooks/useSeenNotifications";
 import { useServiceStatus } from "./hooks/useServiceStatus";
 import { frontendLogger } from "./middleware/logger";
 
-function SummaryCard({ label, value, tone }) {
+function SummaryCard({ icon, label, value, caption }) {
   return (
     <Paper
       elevation={0}
       sx={{
-        minWidth: 150,
-        flex: 1,
-        borderRadius: 4,
+        height: "100%",
         border: "1px solid",
         borderColor: "divider",
-        background:
-          tone === "gold"
-            ? "linear-gradient(135deg, rgba(255,244,214,0.95), rgba(255,255,255,0.92))"
-            : "linear-gradient(135deg, rgba(225,244,255,0.9), rgba(255,255,255,0.92))",
-        px: 2.5,
-        py: 2,
+        borderRadius: 1,
+        px: 2,
+        py: 1.75,
+        backgroundColor: "background.paper",
       }}
     >
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="h5" fontWeight={700} mt={0.5}>
-        {value}
-      </Typography>
+      <Stack spacing={1}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Box sx={{ color: "primary.main", display: "grid", placeItems: "center" }}>{icon}</Box>
+          <Typography variant="body2" color="text.secondary">
+            {label}
+          </Typography>
+        </Stack>
+        <Typography variant="h5" fontWeight={800}>
+          {value}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {caption}
+        </Typography>
+      </Stack>
     </Paper>
   );
 }
@@ -54,132 +61,189 @@ export default function App() {
   const { route, navigate } = useHashRoute();
   const { seenIds, markSeen, isSeen } = useSeenNotifications();
   const serviceStatus = useServiceStatus();
+  const setup = serviceStatus.data?.setup;
+  const serviceReady = Boolean(setup?.canFetchNotifications);
+  const liveReady = Boolean(setup?.canFetchLiveNotifications);
+  const demoMode = Boolean(setup?.usingDemoData);
+  const staticDemo = Boolean(setup?.staticDemo);
 
   useEffect(() => {
     void frontendLogger.info("page", "application shell mounted");
   }, []);
 
+  const sourceLabel = staticDemo
+    ? "Static demo data"
+    : demoMode
+      ? "Demo backend data"
+      : liveReady
+        ? "Protected API live"
+        : "Backend checking";
+
   return (
-    <Box sx={{ minHeight: "100vh", py: { xs: 3, md: 5 } }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.default", py: { xs: 2, md: 3 } }}>
       <Container maxWidth="lg">
-        <Paper
-          elevation={0}
-          sx={{
-            overflow: "hidden",
-            borderRadius: { xs: 4, md: 6 },
-            border: "1px solid",
-            borderColor: "divider",
-            background:
-              "radial-gradient(circle at top left, rgba(9,98,132,0.16), transparent 40%), linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,249,252,0.98))",
-          }}
-        >
-          <Box sx={{ px: { xs: 2.5, md: 4 }, pt: { xs: 3, md: 4 }, pb: 2.5 }}>
-            <Stack spacing={2.5}>
-              <Stack
-                direction={{ xs: "column", md: "row" }}
-                justifyContent="space-between"
-                alignItems={{ xs: "flex-start", md: "center" }}
-                spacing={2}
-              >
-                <Stack spacing={1.25}>
-                  <Chip
-                    icon={<DashboardRoundedIcon />}
-                    label="Realtime campus updates"
-                    color="primary"
-                    sx={{ alignSelf: "flex-start", borderRadius: 999 }}
-                  />
-                  <Typography variant="h3" sx={{ fontSize: { xs: "2rem", md: "2.8rem" } }}>
-                    Campus Notification Desk
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary" maxWidth={700}>
-                    Browse the complete notification stream, surface the highest priority
-                    updates first, and keep track of which items have already been viewed.
-                  </Typography>
-                </Stack>
+        <Stack spacing={2.5}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={1.5}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", md: "center" }}
+          >
+            <Box>
+              <Typography variant="h3" sx={{ fontSize: { xs: "2rem", md: "2.45rem" }, letterSpacing: 0 }}>
+                Campus Notification Desk
+              </Typography>
+              <Typography variant="body1" color="text.secondary" maxWidth={720}>
+                Live notifications use the protected backend when credentials are ready. Until then,
+                the same backend serves demo data so the workflow stays testable.
+              </Typography>
+            </Box>
 
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} width={{ xs: "100%", md: "auto" }}>
-                  <SummaryCard label="Viewed items" value={seenIds.length} tone="blue" />
-                  <SummaryCard
-                    label="Live API"
-                    value={serviceStatus.data?.setup?.canFetchNotifications ? "Ready" : "Setup"}
-                    tone="blue"
-                  />
-                  <SummaryCard label="Priority mode" value="Weighted" tone="gold" />
-                </Stack>
-              </Stack>
-
-              <Tabs
-                value={route}
-                onChange={(_, nextRoute) => navigate(nextRoute)}
-                variant="scrollable"
-                allowScrollButtonsMobile
-                sx={{
-                  "& .MuiTabs-indicator": {
-                    height: 4,
-                    borderRadius: 999,
-                  },
-                }}
-              >
-                <Tab
-                  icon={<NotificationsActiveRoundedIcon />}
-                  iconPosition="start"
-                  label="All Notifications"
-                  value="all"
-                  sx={{ textTransform: "none", minHeight: 56 }}
-                />
-                <Tab
-                  icon={<StarRoundedIcon />}
-                  iconPosition="start"
-                  label="Priority Inbox"
-                  value="priority"
-                  sx={{ textTransform: "none", minHeight: 56 }}
-                />
-              </Tabs>
-
-              <ServiceStatusBanner
-                loading={serviceStatus.loading}
-                error={serviceStatus.error}
-                status={serviceStatus.data}
-                onRetry={serviceStatus.retry}
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={<CloudDoneRoundedIcon />}
+                label={
+                  staticDemo
+                    ? "Static site"
+                    : liveReady
+                      ? "Protected API ready"
+                      : serviceReady
+                        ? "Backend connected"
+                        : "Backend offline"
+                }
+                color={liveReady ? "success" : serviceReady ? "primary" : "warning"}
+                variant={liveReady ? "filled" : "outlined"}
+              />
+              <Chip
+                icon={<DataObjectRoundedIcon />}
+                label={sourceLabel}
+                color={demoMode ? "warning" : "primary"}
+                variant="outlined"
               />
             </Stack>
-          </Box>
+          </Stack>
 
-          <Box sx={{ px: { xs: 2.5, md: 4 }, pb: { xs: 3, md: 4 } }}>
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <SummaryCard
+                icon={<VisibilityRoundedIcon />}
+                label="Viewed items"
+                value={seenIds.length}
+                caption="Saved locally in this browser."
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <SummaryCard
+                icon={<CloudDoneRoundedIcon />}
+                label="Data source"
+                value={staticDemo ? "Static" : demoMode ? "Demo" : liveReady ? "Live" : "Pending"}
+                caption={
+                  staticDemo
+                    ? "Bundled records for GitHub Pages."
+                    : demoMode
+                      ? "Backend fallback is active."
+                      : "Protected route is used when ready."
+                }
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <SummaryCard
+                icon={<StarRoundedIcon />}
+                label="Priority rule"
+                value="Weighted"
+                caption="Placement > Result > Event, then recency."
+              />
+            </Grid>
+          </Grid>
+
+          <Paper
+            elevation={0}
+            sx={{
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 1,
+              bgcolor: "background.paper",
+            }}
+          >
+            <Tabs
+              value={route}
+              onChange={(_, nextRoute) => navigate(nextRoute)}
+              variant="scrollable"
+              allowScrollButtonsMobile
+              sx={{
+                minHeight: 48,
+                px: 1,
+                "& .MuiTab-root": {
+                  minHeight: 48,
+                  mr: 0.5,
+                  textTransform: "none",
+                },
+                "& .Mui-selected": {
+                  bgcolor: "rgba(13,108,140,0.08)",
+                },
+              }}
+            >
+              <Tab
+                icon={<NotificationsActiveRoundedIcon />}
+                iconPosition="start"
+                label="All Notifications"
+                value="all"
+              />
+              <Tab
+                icon={<StarRoundedIcon />}
+                iconPosition="start"
+                label="Priority Inbox"
+                value="priority"
+              />
+            </Tabs>
+          </Paper>
+
+          <ServiceStatusBanner
+            loading={serviceStatus.loading}
+            error={serviceStatus.error}
+            status={serviceStatus.data}
+            onRetry={serviceStatus.retry}
+          />
+
+          <Box>
             {route === "priority" ? (
-              <PriorityInboxPage isSeen={isSeen} markSeen={markSeen} />
+              <PriorityInboxPage
+                isSeen={isSeen}
+                markSeen={markSeen}
+                serviceReady={serviceReady}
+                setup={setup}
+              />
             ) : (
-              <NotificationsPage isSeen={isSeen} markSeen={markSeen} />
+              <NotificationsPage
+                isSeen={isSeen}
+                markSeen={markSeen}
+                serviceReady={serviceReady}
+                setup={setup}
+              />
             )}
           </Box>
 
-          <Box
-            sx={{
-              px: { xs: 2.5, md: 4 },
-              py: 2,
-              borderTop: "1px solid",
-              borderColor: "divider",
-              bgcolor: "rgba(247,250,252,0.92)",
-            }}
+          <Divider />
+
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            pb={1.5}
           >
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              justifyContent="space-between"
-              alignItems={{ xs: "flex-start", sm: "center" }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                Built with a local proxy so credentials stay off the browser.
-              </Typography>
-              <Chip
-                icon={<VisibilityRoundedIcon />}
-                label={`${seenIds.length} notifications marked as viewed`}
-                variant="outlined"
-                sx={{ borderRadius: 999 }}
-              />
-            </Stack>
-          </Box>
-        </Paper>
+            <Typography variant="body2" color="text.secondary">
+              {staticDemo
+                ? "GitHub Pages static demo. Run the Express backend locally for protected API data."
+                : "Backend proxy: `localhost:3001`, frontend: `localhost:3000`."}
+            </Typography>
+            <Chip
+              icon={<VisibilityRoundedIcon />}
+              label={`${seenIds.length} notifications viewed`}
+              variant="outlined"
+            />
+          </Stack>
+        </Stack>
       </Container>
     </Box>
   );

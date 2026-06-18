@@ -1,4 +1,8 @@
 import { requestJson } from "./httpClient";
+import {
+  getStaticDemoNotificationPage,
+  getStaticDemoPriorityNotifications,
+} from "./demoNotifications";
 
 function filterToParams(notificationType) {
   if (!notificationType || notificationType === "All") {
@@ -18,7 +22,7 @@ export function fetchNotifications({ page, limit, notificationType, signal }) {
       ...filterToParams(notificationType),
     },
     signal,
-  });
+  }).catch(() => getStaticDemoNotificationPage({ page, limit, notificationType }));
 }
 
 export function fetchPriorityNotifications({ limit, notificationType, signal }) {
@@ -28,5 +32,5 @@ export function fetchPriorityNotifications({ limit, notificationType, signal }) 
       ...filterToParams(notificationType),
     },
     signal,
-  });
+  }).catch(() => getStaticDemoPriorityNotifications({ limit, notificationType }));
 }

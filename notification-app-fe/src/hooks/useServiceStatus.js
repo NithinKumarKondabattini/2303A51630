@@ -45,8 +45,25 @@ export function useServiceStatus() {
 
         setState({
           loading: false,
-          error: error.message || "Unable to read local service status.",
-          data: null,
+          error: "",
+          data: {
+            status: "static-demo",
+            timestamp: new Date().toISOString(),
+            setup: {
+              serviceBaseUrlConfigured: false,
+              registrationReady: false,
+              authReady: false,
+              missingRegistrationFields: [],
+              missingAuthFields: [],
+              canFetchLiveNotifications: false,
+              usingDemoData: true,
+              staticDemo: true,
+              canFetchNotifications: true,
+              acceptedQueryParameters: ["limit", "page", "notification_type"],
+              supportedNotificationTypes: ["Event", "Result", "Placement"],
+              warning: error.message || "Unable to read local service status.",
+            },
+          },
         });
       }
     }

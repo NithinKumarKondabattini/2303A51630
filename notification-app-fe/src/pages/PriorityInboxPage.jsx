@@ -7,6 +7,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Divider,
   Paper,
   Stack,
   ToggleButton,
@@ -23,24 +24,33 @@ import { formatTimestamp } from "../utils/time";
 
 const LIMIT_OPTIONS = [10, 15, 20];
 
-export function PriorityInboxPage({ isSeen, markSeen }) {
+export function PriorityInboxPage({ isSeen, markSeen, serviceReady, setup }) {
   const [filter, setFilter] = useState("All");
   const [limit, setLimit] = useState(10);
-  const { notifications, fetchedAt, loading, error, retry } = usePriorityNotifications({
+  const { notifications, fetchedAt, meta, loading, error, retry } = usePriorityNotifications({
     limit,
     notificationType: filter,
+    enabled: serviceReady,
   });
 
   useEffect(() => {
     void frontendLogger.info("page", "priority inbox page mounted");
   }, []);
 
+  const setupMissingFields = setup
+    ? Array.from(
+        new Set([...(setup.missingRegistrationFields ?? []), ...(setup.missingAuthFields ?? [])])
+      )
+    : [];
+
+  const newCount = notifications.filter((notification) => !isSeen(notification.ID)).length;
+
   return (
     <Stack spacing={3}>
       <Paper
         elevation={0}
         sx={{
-          borderRadius: 4,
+          borderRadius: 1,
           border: "1px solid",
           borderColor: "divider",
           px: { xs: 2, md: 3 },
@@ -62,8 +72,8 @@ export function PriorityInboxPage({ isSeen, markSeen }) {
                 </Typography>
               </Stack>
               <Typography variant="body2" color="text.secondary" maxWidth={680}>
-                Items are ranked by notification type first and recency second, so placement updates stay ahead of
-                result updates, which stay ahead of event notices.
+                Items are ranked by notification type first and recency second, so placement
+                updates stay ahead of result updates, which stay ahead of event notices.
               </Typography>
             </Stack>
 
@@ -71,55 +81,87 @@ export function PriorityInboxPage({ isSeen, markSeen }) {
               variant="outlined"
               startIcon={<RefreshRoundedIcon />}
               onClick={retry}
-              sx={{ textTransform: "none", borderRadius: 999 }}
+              disabled={!serviceReady}
             >
               Refresh
             </Button>
           </Stack>
 
-          <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} justifyContent="space-between">
-            <NotificationFilter
-              value={filter}
-              onChange={(nextFilter) => {
-                setFilter(nextFilter);
-                void frontendLogger.info("component", `priority filter changed to ${nextFilter}`);
-              }}
-            />
+          <Divider />
 
-            <ToggleButtonGroup
-              exclusive
-              value={limit}
-              onChange={(_, nextLimit) => {
-                if (nextLimit) {
-                  setLimit(nextLimit);
-                  void frontendLogger.info("state", `priority list size changed to ${nextLimit}`);
-                }
-              }}
-              size="small"
-              sx={{ flexWrap: "wrap", gap: 0.5 }}
-            >
-              {LIMIT_OPTIONS.map((option) => (
-                <ToggleButton key={option} value={option} sx={{ textTransform: "none", px: 2 }}>
-                  Top {option}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
+          <Stack direction={{ xs: "column", lg: "row" }} spacing={2} justifyContent="space-between">
+            <Stack spacing={0.8}>
+              <Typography variant="overline" color="text.secondary">
+                Notification type
+              </Typography>
+              <NotificationFilter
+                value={filter}
+                onChange={(nextFilter) => {
+                  setFilter(nextFilter);
+                  void frontendLogger.info("component", `priority filter changed to ${nextFilter}`);
+                }}
+              />
+            </Stack>
+
+            <Stack spacing={0.8}>
+              <Typography variant="overline" color="text.secondary">
+                Priority view size
+              </Typography>
+              <ToggleButtonGroup
+                exclusive
+                value={limit}
+                onChange={(_, nextLimit) => {
+                  if (nextLimit) {
+                    setLimit(nextLimit);
+                    void frontendLogger.info("state", `priority list size changed to ${nextLimit}`);
+                  }
+                }}
+                size="small"
+                sx={{
+                  flexWrap: "wrap",
+                  gap: 0.75,
+                  "& .MuiToggleButtonGroup-grouped": {
+                    border: "1px solid",
+                    borderColor: "divider",
+                  },
+                }}
+              >
+                {LIMIT_OPTIONS.map((option) => (
+                  <ToggleButton key={option} value={option}>
+                    Top {option}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Stack>
           </Stack>
 
-          <Typography variant="body2" color="text.secondary">
-            Last fetched: <strong>{fetchedAt ? formatTimestamp(fetchedAt) : "Pending"}</strong>
-          </Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Chip label={`Top ${limit}`} variant="outlined" sx={{ borderRadius: 999 }} />
-            <Chip label={`Filter ${filter}`} variant="outlined" sx={{ borderRadius: 999 }} />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} flexWrap="wrap" useFlexGap>
+            <Chip label={`Top ${limit}`} variant="outlined" />
+            <Chip label={`Filter ${filter}`} variant="outlined" />
+            <Chip label={`New in this view ${newCount}`} variant="outlined" />
+            <Chip label={`Last fetched ${fetchedAt ? formatTimestamp(fetchedAt) : "Pending"}`} variant="outlined" />
             <Chip
-              label={`${notifications.filter((notification) => !isSeen(notification.ID)).length} new in this view`}
+              label={meta?.usingDemoData ? "Source demo" : "Source live"}
+              color={meta?.usingDemoData ? "warning" : "success"}
               variant="outlined"
-              sx={{ borderRadius: 999 }}
             />
           </Stack>
         </Stack>
       </Paper>
+
+      {!serviceReady && setup ? (
+        <NotificationEmptyState
+          title="Backend status is not ready"
+          description="The local proxy responded, but priority notifications are not available yet."
+          action={
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent="center">
+              {setupMissingFields.map((field) => (
+                <Chip key={field} label={field} size="small" variant="outlined" />
+              ))}
+            </Stack>
+          }
+        />
+      ) : null}
 
       {loading && notifications.length === 0 ? (
         <Box display="flex" justifyContent="center" py={8}>
@@ -127,7 +169,7 @@ export function PriorityInboxPage({ isSeen, markSeen }) {
         </Box>
       ) : null}
 
-      {error ? (
+      {serviceReady && error ? (
         <Alert
           severity="error"
           action={
@@ -140,7 +182,7 @@ export function PriorityInboxPage({ isSeen, markSeen }) {
         </Alert>
       ) : null}
 
-      {!loading && !error && notifications.length === 0 ? (
+      {serviceReady && !loading && !error && notifications.length === 0 ? (
         <NotificationEmptyState
           title="No priority notifications available"
           description="The selected filters did not return any notifications. Try a broader view or refresh the inbox."

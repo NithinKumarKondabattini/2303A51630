@@ -61,6 +61,7 @@ export function canRegister(credentials) {
 export function createServiceAuthClient(options) {
   const baseUrl = options.baseUrl.replace(/\/+$/, "");
   const fetchImpl = options.fetchImpl ?? fetch;
+  const onRegistered = options.onRegistered ?? (async () => {});
   const state = {
     credentials: cloneCredentials(options.credentials),
     accessToken: "",
@@ -104,6 +105,7 @@ export function createServiceAuthClient(options) {
     const data = await response.json();
     state.credentials.clientID = data.clientID ?? "";
     state.credentials.clientSecret = data.clientSecret ?? "";
+    await onRegistered(data, cloneCredentials(state.credentials));
 
     return data;
   }
